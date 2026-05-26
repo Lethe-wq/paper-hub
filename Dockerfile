@@ -6,7 +6,7 @@ WORKDIR /app
 RUN sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list.d/debian.sources
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libgl1-mesa-glx \
+    libgl1 \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
