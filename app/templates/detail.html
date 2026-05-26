@@ -86,11 +86,50 @@
         </div>
     </div>
 
-    <!-- PDF预览 -->
-    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 mb-6">
-        <h2 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">PDF 预览</h2>
-        <div class="bg-gray-100 dark:bg-gray-700 rounded-xl overflow-hidden" style="height: 600px;">
-            <iframe src="{{ url_for('papers.uploaded_file', filename=paper.filepath) }}" class="w-full h-full border-0"></iframe>
+    <!-- PDF 全文阅读 -->
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 mb-6">
+        <!-- 工具栏 -->
+        <div class="sticky top-16 z-40 flex items-center justify-between px-6 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-t-2xl">
+            <span class="text-sm font-semibold text-gray-500 dark:text-gray-400">全文阅读</span>
+            <div class="flex items-center gap-2">
+                <button onclick="prevPage()" class="px-2 py-1 text-sm rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                </button>
+                <span class="text-sm text-gray-500 dark:text-gray-400 min-w-[80px] text-center">
+                    <span id="pageNum">-</span> / <span id="pageCount">-</span>
+                </span>
+                <button onclick="nextPage()" class="px-2 py-1 text-sm rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+                <span class="text-gray-300 dark:text-gray-600 mx-1">|</span>
+                <button onclick="zoomOut()" class="px-2 py-1 text-sm rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path></svg>
+                </button>
+                <span id="zoomLevel" class="text-sm text-gray-500 dark:text-gray-400 min-w-[40px] text-center">100%</span>
+                <button onclick="zoomIn()" class="px-2 py-1 text-sm rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                </button>
+                <span class="text-gray-300 dark:text-gray-600 mx-1">|</span>
+                <button onclick="toggleViewMode()" id="viewModeBtn" class="px-3 py-1 text-xs font-medium rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition">连续滚动</button>
+            </div>
+        </div>
+
+        <!-- 加载提示 -->
+        <div id="pdfLoading" class="flex items-center justify-center py-20">
+            <div class="flex items-center gap-2 text-primary-600 dark:text-primary-400">
+                <svg class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
+                正在加载论文...
+            </div>
+        </div>
+
+        <!-- 单页模式：一次显示一页 -->
+        <div id="singlePageView" class="flex justify-center py-6 bg-gray-50 dark:bg-gray-900/50">
+            <canvas id="pdfCanvas" class="shadow-lg max-w-full"></canvas>
+        </div>
+
+        <!-- 连续滚动模式：所有页面纵向排列 -->
+        <div id="scrollableView" class="hidden py-6 bg-gray-50 dark:bg-gray-900/50 max-h-[80vh] overflow-y-auto">
+            <div id="pagesContainer" class="flex flex-col items-center gap-4"></div>
         </div>
     </div>
 
@@ -137,4 +176,122 @@
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async function() {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    const pdfUrl = '{{ url_for("papers.uploaded_file", filename=paper.filepath) }}';
+    let pdfDoc = null;
+    let currentPage = 1;
+    let scale = 1.5;
+    let viewMode = 'single'; // 'single' 或 'scroll'
+
+    // 加载 PDF 文档
+    try {
+        pdfDoc = await pdfjsLib.getDocument(pdfUrl).promise;
+        document.getElementById('pageCount').textContent = pdfDoc.numPages;
+        document.getElementById('pageNum').textContent = 1;
+        document.getElementById('pdfLoading').classList.add('hidden');
+        renderPage(1);
+    } catch (e) {
+        document.getElementById('pdfLoading').innerHTML =
+            '<p class="text-red-500 text-sm">PDF 加载失败，请尝试<a href="' + pdfUrl + '" download class="underline">下载</a>后阅读</p>';
+    }
+
+    // 渲染单页
+    async function renderPage(num) {
+        const page = await pdfDoc.getPage(num);
+        const viewport = page.getViewport({ scale });
+        const canvas = document.getElementById('pdfCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        document.getElementById('pageNum').textContent = num;
+        currentPage = num;
+    }
+
+    // 渲染所有页面（连续滚动模式）
+    async function renderAllPages() {
+        const container = document.getElementById('pagesContainer');
+        container.innerHTML = '';
+        for (let i = 1; i <= pdfDoc.numPages; i++) {
+            const page = await pdfDoc.getPage(i);
+            const viewport = page.getViewport({ scale });
+            const canvas = document.createElement('canvas');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            canvas.className = 'shadow-lg max-w-full';
+            container.appendChild(canvas);
+            // 滚动模式下也显示页码标签
+            if (pdfDoc.numPages > 1) {
+                const label = document.createElement('span');
+                label.className = 'text-xs text-gray-400 -mt-3 mb-2';
+                label.textContent = '第 ' + i + ' 页';
+                container.appendChild(label);
+            }
+            await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+        }
+    }
+
+    // 翻页
+    window.prevPage = function() {
+        if (viewMode !== 'single' || currentPage <= 1) return;
+        renderPage(currentPage - 1);
+    };
+    window.nextPage = function() {
+        if (viewMode !== 'single' || currentPage >= pdfDoc.numPages) return;
+        renderPage(currentPage + 1);
+    };
+
+    // 缩放
+    window.zoomIn = function() {
+        if (scale >= 3) return;
+        scale = Math.min(3, scale + 0.25);
+        updateZoom();
+    };
+    window.zoomOut = function() {
+        if (scale <= 0.5) return;
+        scale = Math.max(0.5, scale - 0.25);
+        updateZoom();
+    };
+    function updateZoom() {
+        document.getElementById('zoomLevel').textContent = Math.round(scale / 1.5 * 100) + '%';
+        if (viewMode === 'single') {
+            renderPage(currentPage);
+        } else {
+            renderAllPages();
+        }
+    }
+
+    // 切换视图模式
+    window.toggleViewMode = function() {
+        const btn = document.getElementById('viewModeBtn');
+        if (viewMode === 'single') {
+            viewMode = 'scroll';
+            btn.textContent = '单页视图';
+            document.getElementById('singlePageView').classList.add('hidden');
+            document.getElementById('scrollableView').classList.remove('hidden');
+            renderAllPages();
+        } else {
+            viewMode = 'single';
+            btn.textContent = '连续滚动';
+            document.getElementById('singlePageView').classList.remove('hidden');
+            document.getElementById('scrollableView').classList.add('hidden');
+            renderPage(currentPage);
+        }
+    };
+
+    // 键盘快捷键
+    document.addEventListener('keydown', function(e) {
+        if (viewMode !== 'single') return;
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') prevPage();
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') nextPage();
+    });
+});
+</script>
 {% endblock %}
