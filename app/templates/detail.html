@@ -181,8 +181,10 @@
 {% block extra_head %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
+// 禁用 Worker，避免跨域被拦截
 document.addEventListener('DOMContentLoaded', async function() {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    // 禁用 Worker，避免跨域被拦截
+    pdfjsLib.GlobalWorkerOptions.workerSrc = '';
 
     const pdfUrl = '{{ url_for("papers.uploaded_file", filename=paper.filepath) }}';
     let pdfDoc = null;
@@ -192,7 +194,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // 加载 PDF 文档
     try {
-        pdfDoc = await pdfjsLib.getDocument(pdfUrl).promise;
+        pdfDoc = await pdfjsLib.getDocument({ url: pdfUrl, useWorkerFetch: false }).promise;
         document.getElementById('pageCount').textContent = pdfDoc.numPages;
         document.getElementById('pageNum').textContent = 1;
         document.getElementById('pdfLoading').classList.add('hidden');

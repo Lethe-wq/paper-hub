@@ -225,4 +225,10 @@ def search():
 @papers_bp.route("/uploads/<path:filename>")
 def uploaded_file(filename):
     """静态文件访问：提供 PDF 文件和缩略图的下载/预览"""
-    return send_from_directory(current_app.config["UPLOAD_FOLDER"], filename)
+    response = send_from_directory(current_app.config["UPLOAD_FOLDER"], filename)
+    # PDF 文件设置 inline 浏览头，允许 PDF.js 跨域读取
+    if filename.lower().endswith(".pdf"):
+        response.headers["Content-Type"] = "application/pdf"
+        response.headers["Content-Disposition"] = "inline"
+        response.headers["Access-Control-Allow-Origin"] = "*"
+    return response
