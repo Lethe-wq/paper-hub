@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}{{ paper.title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- 返回 -->
+    <a href="{{ url_for('papers.index') }}" class="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition mb-4">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+        返回列表
+    </a>
+
+    <!-- 论文信息卡片 -->
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 sm:p-8 mb-6">
+        <div class="flex flex-col sm:flex-row gap-6">
+            <!-- 缩略图 -->
+            <div class="flex-shrink-0">
+                {% if paper.thumbnail %}
+                <img src="{{ url_for('papers.uploaded_file', filename=paper.thumbnail) }}" alt="{{ paper.title }}" class="w-36 h-48 object-cover rounded-xl border border-gray-200 dark:border-gray-600 shadow-sm">
+                {% else %}
+                <div class="w-36 h-48 bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center">
+                    <svg class="w-10 h-10 text-gray-300 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- 元信息 -->
+            <div class="flex-1 min-w-0">
+                <h1 class="text-xl sm:text-2xl font-bold mb-3">{{ paper.title }}</h1>
+
+                {% if paper.authors %}
+                <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 mb-2">
+                    <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    <span>{{ paper.authors }}</span>
+                </div>
+                {% endif %}
+
+                {% if paper.year %}
+                <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-2">
+                    <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    <span>{{ paper.year }}</span>
+                </div>
+                {% endif %}
+
+                <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-3">
+                    <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <span>{{ paper.file_size_display() }}</span>
+                    <span class="text-gray-300 dark:text-gray-600">|</span>
+                    <span>{{ paper.created_at.strftime('%Y-%m-%d') }} 上传</span>
+                </div>
+
+                {% if paper.tag_list() %}
+                <div class="flex flex-wrap gap-1.5">
+                    {% for tag in paper.tag_list() %}
+                    <a href="{{ url_for('papers.index', tag=tag) }}" class="px-3 py-1 text-xs bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-full hover:bg-primary-100 dark:hover:bg-primary-900/50 transition">{{ tag }}</a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 摘要 -->
+        {% if paper.abstract %}
+        <div class="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
+            <h2 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">摘要</h2>
+            <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{{ paper.abstract }}</p>
+        </div>
+        {% endif %}
+
+        <!-- 操作按钮 -->
+        <div class="flex items-center gap-3 mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
+            <a href="{{ url_for('papers.uploaded_file', filename=paper.filepath) }}" download class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-xl transition shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                下载 PDF
+            </a>
+            <a href="{{ url_for('papers.edit', paper_id=paper.id) }}" class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                编辑信息
+            </a>
+            <form action="{{ url_for('papers.delete', paper_id=paper.id) }}" method="post" onsubmit="return confirm('确定要删除这篇论文吗？此操作不可恢复。')">
+                <button type="submit" class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    删除
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- PDF预览 -->
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 mb-6">
+        <h2 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">PDF 预览</h2>
+        <div class="bg-gray-100 dark:bg-gray-700 rounded-xl overflow-hidden" style="height: 600px;">
+            <iframe src="{{ url_for('papers.uploaded_file', filename=paper.filepath) }}" class="w-full h-full border-0"></iframe>
+        </div>
+    </div>
+
+    <!-- 评论区 -->
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+        <h2 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">评论 ({{ comments|length }})</h2>
+
+        <!-- 发表评论 -->
+        <form action="{{ url_for('comments.add', paper_id=paper.id) }}" method="post" class="mb-6">
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                <input type="text" name="author_name" required placeholder="你的名字" class="sm:col-span-1 px-4 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 transition">
+                <input type="text" name="content" required placeholder="写下你的评论..." class="sm:col-span-3 px-4 py-2.5 text-sm rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 transition">
+            </div>
+            <div class="flex justify-end mt-2">
+                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-xl transition">发表评论</button>
+            </div>
+        </form>
+
+        <!-- 评论列表 -->
+        {% if comments %}
+        <div class="space-y-4">
+            {% for comment in comments %}
+            <div class="flex gap-3 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+                <div class="flex-shrink-0 w-8 h-8 bg-primary-100 dark:bg-primary-900/40 rounded-full flex items-center justify-center">
+                    <span class="text-xs font-semibold text-primary-600 dark:text-primary-400">{{ comment.author_name[0] }}</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-medium">{{ comment.author_name }}</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-gray-400">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                            <form action="{{ url_for('comments.delete', comment_id=comment.id) }}" method="post" onsubmit="return confirm('确定删除这条评论？')">
+                                <button type="submit" class="text-xs text-red-400 hover:text-red-600 transition">删除</button>
+                            </form>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">{{ comment.content }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-sm text-gray-400 dark:text-gray-500 text-center py-4">暂无评论，来发表第一条吧</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

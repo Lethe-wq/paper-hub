@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}首页{% endblock %}
+
+{% block content %}
+<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+    <div>
+        <h1 class="text-2xl font-bold">论文库</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">共 {{ pagination.total }} 篇论文</p>
+    </div>
+    <div class="flex items-center gap-2">
+        <select onchange="window.location.href=this.value" class="text-sm px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500">
+            <option value="{{ url_for('papers.index', sort='newest', tag=current_tag) }}" {% if sort=='newest' %}selected{% endif %}>最新上传</option>
+            <option value="{{ url_for('papers.index', sort='oldest', tag=current_tag) }}" {% if sort=='oldest' %}selected{% endif %}>最早上传</option>
+            <option value="{{ url_for('papers.index', sort='title', tag=current_tag) }}" {% if sort=='title' %}selected{% endif %}>按标题排序</option>
+        </select>
+    </div>
+</div>
+
+<!-- 标签筛选 -->
+{% if tags %}
+<div class="flex flex-wrap gap-2 mb-6">
+    <a href="{{ url_for('papers.index', sort=sort) }}" class="px-3 py-1 text-xs rounded-full transition
+        {% if not current_tag %}bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 font-medium{% else %}bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600{% endif %}">
+        全部
+    </a>
+    {% for tag in tags %}
+    <a href="{{ url_for('papers.index', tag=tag, sort=sort) }}" class="px-3 py-1 text-xs rounded-full transition
+        {% if current_tag == tag %}bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 font-medium{% else %}bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600{% endif %}">
+        {{ tag }}
+    </a>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- 论文卡片网格 -->
+{% if papers %}
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    {% for paper in papers %}
+    <a href="{{ url_for('papers.detail', paper_id=paper.id) }}" class="group bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg hover:border-primary-300 dark:hover:border-primary-600 transition-all duration-200">
+        <!-- 缩略图 -->
+        <div class="aspect-[3/4] bg-gray-100 dark:bg-gray-700 flex items-center justify-center overflow-hidden">
+            {% if paper.thumbnail %}
+            <img src="{{ url_for('papers.uploaded_file', filename=paper.thumbnail) }}" alt="{{ paper.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200">
+            {% else %}
+            <svg class="w-12 h-12 text-gray-300 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            {% endif %}
+        </div>
+        <!-- 信息 -->
+        <div class="p-4">
+            <h3 class="font-semibold text-sm line-clamp-2 mb-1 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition">{{ paper.title }}</h3>
+            <p class="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">{{ paper.authors }}</p>
+            <div class="flex items-center justify-between mt-3">
+                <span class="text-xs text-gray-400 dark:text-gray-500">{{ paper.created_at.strftime('%Y-%m-%d') }}</span>
+                {% if paper.year %}
+                <span class="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded-full text-gray-500 dark:text-gray-400">{{ paper.year }}</span>
+                {% endif %}
+            </div>
+            {% if paper.tag_list() %}
+            <div class="flex flex-wrap gap-1 mt-2">
+                {% for tag in paper.tag_list()[:3] %}
+                <span class="text-xs px-2 py-0.5 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-full">{{ tag }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </a>
+    {% endfor %}
+</div>
+
+<!-- 分页 -->
+{% if pagination.pages > 1 %}
+<div class="flex items-center justify-center gap-2 mt-8">
+    {% if pagination.has_prev %}
+    <a href="{{ url_for('papers.index', page=pagination.prev_num, tag=current_tag, sort=sort) }}" class="px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition">上一页</a>
+    {% endif %}
+    <span class="text-sm text-gray-500 dark:text-gray-400">{{ pagination.page }} / {{ pagination.pages }}</span>
+    {% if pagination.has_next %}
+    <a href="{{ url_for('papers.index', page=pagination.next_num, tag=current_tag, sort=sort) }}" class="px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition">下一页</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<!-- 空状态 -->
+<div class="text-center py-20">
+    <svg class="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+    <h3 class="text-lg font-medium text-gray-500 dark:text-gray-400">还没有论文</h3>
+    <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">点击右上角「上传论文」开始添加</p>
+</div>
+{% endif %}
+
+{% endblock %}

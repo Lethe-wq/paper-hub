@@ -1,0 +1,5 @@
+flask==3.1.1
+flask-sqlalchemy==3.1.1
+pymupdf==1.26.1
+gunicorn==23.0.0
+Pillow==11.2.1

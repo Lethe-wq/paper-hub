@@ -1,0 +1,11 @@
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./papers.db:/app/papers.db
+    environment:
+      - SECRET_KEY=change-this-to-a-random-secret-key
+    restart: unless-stopped
