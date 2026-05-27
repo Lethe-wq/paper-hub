@@ -21,5 +21,5 @@ class Config:
     THUMBNAIL_FOLDER = os.path.join(BASE_DIR, "uploads", "thumbnails")
     # 数据集文件存储目录
     DATASET_FOLDER = os.path.join(BASE_DIR, "uploads", "datasets")
-    # 上传文件大小上限：50MB
-    MAX_CONTENT_LENGTH = 50 * 1024 * 1024
+    # 上传文件大小上限：800MB
+    MAX_CONTENT_LENGTH = 800 * 1024 * 1024
