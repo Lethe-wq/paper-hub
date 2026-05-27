@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}数据集{% endblock %}
+
+{% block content %}
+<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+    <div>
+        <h1 class="text-2xl font-bold">数据集</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">共 {{ pagination.total }} 个数据集</p>
+    </div>
+    <div class="flex items-center gap-2">
+        <select onchange="window.location.href=this.value" class="text-sm px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500">
+            <option value="{{ url_for('datasets.index', sort='newest', tag=current_tag) }}" {% if sort=='newest' %}selected{% endif %}>最新上传</option>
+            <option value="{{ url_for('datasets.index', sort='oldest', tag=current_tag) }}" {% if sort=='oldest' %}selected{% endif %}>最早上传</option>
+            <option value="{{ url_for('datasets.index', sort='name', tag=current_tag) }}" {% if sort=='name' %}selected{% endif %}>按名称排序</option>
+        </select>
+        <a href="{{ url_for('datasets.upload') }}" class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-xl transition shadow-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+            <span class="hidden sm:inline">上传数据集</span>
+        </a>
+    </div>
+</div>
+
+<!-- 标签筛选 -->
+{% if tags %}
+<div class="flex flex-wrap gap-2 mb-6">
+    <a href="{{ url_for('datasets.index', sort=sort) }}" class="px-3 py-1 text-xs rounded-full transition
+        {% if not current_tag %}bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 font-medium{% else %}bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600{% endif %}">
+        全部
+    </a>
+    {% for tag in tags %}
+    <a href="{{ url_for('datasets.index', tag=tag, sort=sort) }}" class="px-3 py-1 text-xs rounded-full transition
+        {% if current_tag == tag %}bg-primary-100 dark:bg-primary-900/40 text-primary-700 dark:text-primary-300 font-medium{% else %}bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600{% endif %}">
+        {{ tag }}
+    </a>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- 数据集卡片网格 -->
+{% if datasets %}
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    {% for ds in datasets %}
+    <a href="{{ url_for('datasets.detail', dataset_id=ds.id) }}" class="group bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-lg hover:border-primary-300 dark:hover:border-primary-600 transition-all duration-200">
+        <!-- 文件类型图标区域 -->
+        <div class="aspect-[3/4] bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-750 flex flex-col items-center justify-center p-6 relative">
+            <svg class="w-16 h-16 text-gray-300 dark:text-gray-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
+            {% if ds.file_type %}
+            <span class="absolute top-3 right-3 text-xs px-2 py-0.5 bg-white/80 dark:bg-gray-600/80 rounded-full text-gray-600 dark:text-gray-300 font-medium uppercase">{{ ds.file_type }}</span>
+            {% endif %}
+            <span class="text-xs text-gray-400 dark:text-gray-500 mt-1">{{ ds.file_size_display() }}</span>
+        </div>
+        <!-- 信息 -->
+        <div class="p-4">
+            <h3 class="font-semibold text-sm line-clamp-2 mb-1 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition">{{ ds.name }}</h3>
+            {% if ds.description %}
+            <p class="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">{{ ds.description }}</p>
+            {% endif %}
+            <div class="flex items-center justify-between mt-3">
+                <span class="text-xs text-gray-400 dark:text-gray-500">{{ ds.created_at.strftime('%Y-%m-%d') }}</span>
+                <span class="text-xs text-gray-400 dark:text-gray-500">{{ ds.filename }}</span>
+            </div>
+            {% if ds.tag_list() %}
+            <div class="flex flex-wrap gap-1 mt-2">
+                {% for tag in ds.tag_list()[:3] %}
+                <span class="text-xs px-2 py-0.5 bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-full">{{ tag }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </a>
+    {% endfor %}
+</div>
+
+<!-- 分页 -->
+{% if pagination.pages > 1 %}
+<div class="flex items-center justify-center gap-2 mt-8">
+    {% if pagination.has_prev %}
+    <a href="{{ url_for('datasets.index', page=pagination.prev_num, tag=current_tag, sort=sort) }}" class="px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition">上一页</a>
+    {% endif %}
+    <span class="text-sm text-gray-500 dark:text-gray-400">{{ pagination.page }} / {{ pagination.pages }}</span>
+    {% if pagination.has_next %}
+    <a href="{{ url_for('datasets.index', page=pagination.next_num, tag=current_tag, sort=sort) }}" class="px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition">下一页</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<!-- 空状态 -->
+<div class="text-center py-20">
+    <svg class="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
+    <h3 class="text-lg font-medium text-gray-500 dark:text-gray-400">还没有数据集</h3>
+    <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">点击上方「上传数据集」开始添加</p>
+</div>
+{% endif %}
+
+{% endblock %}

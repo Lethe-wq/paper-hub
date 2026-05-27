@@ -19,5 +19,7 @@ class Config:
     UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
     # PDF 首页缩略图存储目录
     THUMBNAIL_FOLDER = os.path.join(BASE_DIR, "uploads", "thumbnails")
+    # 数据集文件存储目录
+    DATASET_FOLDER = os.path.join(BASE_DIR, "uploads", "datasets")
     # 上传文件大小上限：50MB
     MAX_CONTENT_LENGTH = 50 * 1024 * 1024

@@ -20,13 +20,16 @@ def create_app():
     # 确保文件上传目录存在
     os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
     os.makedirs(app.config["THUMBNAIL_FOLDER"], exist_ok=True)
+    os.makedirs(app.config["DATASET_FOLDER"], exist_ok=True)
 
     # 注册路由蓝图
     from app.routes.papers import papers_bp
     from app.routes.comments import comments_bp
+    from app.routes.datasets import datasets_bp
 
     app.register_blueprint(papers_bp)
     app.register_blueprint(comments_bp)
+    app.register_blueprint(datasets_bp)
 
     # 在应用上下文中创建所有数据库表（如果不存在）
     with app.app_context():

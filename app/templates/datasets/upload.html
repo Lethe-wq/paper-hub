@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}上传数据集{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <h1 class="text-2xl font-bold mb-6">上传数据集</h1>
+
+    <form id="uploadForm" method="post" enctype="multipart/form-data" action="{{ url_for('datasets.upload') }}">
+        <!-- 拖拽上传区域 -->
+        <div id="dropZone" class="relative border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl p-8 text-center hover:border-primary-400 dark:hover:border-primary-500 transition-colors cursor-pointer mb-6"
+             x-data="{ dragging: false }"
+             @dragover.prevent="dragging = true"
+             @dragleave.prevent="dragging = false"
+             @drop.prevent="handleDrop($event)"
+             :class="dragging ? 'border-primary-400 dark:border-primary-500 bg-primary-50 dark:bg-primary-900/10' : ''"
+             @click="document.getElementById('fileInput').click()">
+            <input type="file" id="fileInput" name="file" class="hidden" onchange="handleFileSelect(this)">
+            <div id="dropContent">
+                <svg class="w-12 h-12 mx-auto text-gray-400 dark:text-gray-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                <p class="text-gray-600 dark:text-gray-300 font-medium">拖拽文件到这里，或点击选择文件</p>
+                <p class="text-sm text-gray-400 dark:text-gray-500 mt-1">支持所有格式（CSV、JSON、ZIP 等），最大 50MB</p>
+            </div>
+            <div id="fileInfo" class="hidden">
+                <svg class="w-12 h-12 mx-auto text-primary-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <p id="fileName" class="text-primary-600 dark:text-primary-400 font-medium"></p>
+                <p id="fileSize" class="text-sm text-gray-400 mt-1"></p>
+            </div>
+        </div>
+
+        <!-- 数据集信息表单 -->
+        <div id="formFields" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium mb-1.5">名称 <span class="text-red-500">*</span></label>
+                <input type="text" name="name" id="nameInput" required placeholder="数据集名称" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition">
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1.5">说明</label>
+                <textarea name="description" id="descInput" rows="4" placeholder="数据集说明、来源、用途等" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition resize-none"></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1.5">标签</label>
+                <input type="text" name="tags" id="tagsInput" placeholder="图像数据, NLP, 多个标签用逗号分隔" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition">
+            </div>
+        </div>
+
+        <!-- 提交 -->
+        <div class="flex justify-end gap-3 mt-6">
+            <a href="{{ url_for('datasets.index') }}" class="px-6 py-2.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition">取消</a>
+            <button type="submit" id="submitBtn" disabled class="px-6 py-2.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed rounded-xl transition shadow-sm">上传数据集</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    function handleFileSelect(input) {
+        if (input.files && input.files[0]) {
+            processFile(input.files[0]);
+        }
+    }
+
+    function handleDrop(event) {
+        const files = event.dataTransfer.files;
+        if (files && files[0]) {
+            processFile(files[0]);
+        }
+    }
+
+    function processFile(file) {
+        document.getElementById('dropContent').classList.add('hidden');
+        document.getElementById('fileInfo').classList.remove('hidden');
+        document.getElementById('fileName').textContent = file.name;
+        document.getElementById('fileSize').textContent = formatSize(file.size);
+
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        document.getElementById('fileInput').files = dt.files;
+
+        document.getElementById('submitBtn').disabled = false;
+
+        // 自动用文件名填充名称（仅当名称为空时）
+        const nameInput = document.getElementById('nameInput');
+        if (!nameInput.value) {
+            nameInput.value = file.name.replace(/\.[^/.]+$/, '');
+        }
+    }
+
+    function formatSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+</script>
+{% endblock %}

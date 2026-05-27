@@ -42,6 +42,40 @@ class Paper(db.Model):
             return f"{size / (1024 * 1024):.1f} MB"
 
 
+class Dataset(db.Model):
+    """数据集模型，存储数据集的元信息和文件路径"""
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(500), nullable=False)       # 数据集名称
+    description = db.Column(db.Text, default="")            # 数据集说明
+    filename = db.Column(db.String(200), nullable=False)    # 用户上传时的原始文件名
+    filepath = db.Column(db.String(500), nullable=False)    # 服务器上的唯一存储文件名
+    file_size = db.Column(db.Integer, default=0)            # 文件大小（字节）
+    file_type = db.Column(db.String(50), default="")        # 文件扩展名
+    tags = db.Column(db.String(200), default="")            # 标签，逗号分隔
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    def tag_list(self):
+        """将逗号分隔的标签字符串转为列表"""
+        if not self.tags:
+            return []
+        return [t.strip() for t in self.tags.split(",") if t.strip()]
+
+    def file_size_display(self):
+        """将字节数转为人类可读的大小格式"""
+        size = self.file_size
+        if size < 1024:
+            return f"{size} B"
+        elif size < 1024 * 1024:
+            return f"{size / 1024:.1f} KB"
+        else:
+            return f"{size / (1024 * 1024):.1f} MB"
+
+
 class Comment(db.Model):
     """评论模型，团队成员对论文的评论和笔记"""
     id = db.Column(db.Integer, primary_key=True)

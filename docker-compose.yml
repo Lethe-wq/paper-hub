@@ -5,6 +5,7 @@ services:
       - "5000:5000"
     volumes:
       - ./uploads:/app/uploads
+      - ./uploads/datasets:/app/uploads/datasets
       - ./papers.db:/app/papers.db
     environment:
       - SECRET_KEY=change-this-to-a-random-secret-key
